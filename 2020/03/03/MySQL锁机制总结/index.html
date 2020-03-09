@@ -1,0 +1,146 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content=""><title>MySQL锁机制总结 | 陌无崖 Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/normalize/8.0.1/normalize.min.css"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//lib.baomitu.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//lib.baomitu.com/jquery/3.4.0/jquery.min.js"></script><link rel="icon" mask="" sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><meta name="generator" content="Hexo 4.2.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MySQL锁机制总结</h1><a id="logo" href="/.">陌无崖 Blog</a><p class="description">What Should I Do？</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/tags/"><i class="fa fa-tag"> 标签</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/study/"><i class="fa fa-book"> study</i></a><a href="https://github.com/yuwe1" target="_blank" rel="noopener"><i class="fa fa-github"> github</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MySQL锁机制总结</h1><div class="post-meta">Mar 3, 2020<span> | </span><span class="category"><a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span></div><div class="post-content"><h1 id="MySQL锁机制总结"><a href="#MySQL锁机制总结" class="headerlink" title="MySQL锁机制总结"></a>MySQL锁机制总结</h1><p><a name="v1vAd"></a></p>
+<h3 id="锁的划分"><a href="#锁的划分" class="headerlink" title="锁的划分"></a>锁的划分</h3><p><a name="5dMwr"></a></p>
+<h4 id="基础粒度划分"><a href="#基础粒度划分" class="headerlink" title="基础粒度划分"></a>基础粒度划分</h4><ul>
+<li>行级锁<ul>
+<li>即执行语句的时候进行加锁，这种锁的开销大，加锁慢，但是由于锁的粒度小，适用于并发，因此并发能力最高；</li>
+</ul>
+</li>
+<li>表级锁<ul>
+<li>即在操作表的时候进行加锁，这种锁的开销小，加锁快，并不会出现死锁，同理，只试用于并发量少的应用场景；<br><a name="tbCdc"></a></li>
+</ul>
+</li>
+</ul>
+<h4 id="按照类型划分"><a href="#按照类型划分" class="headerlink" title="按照类型划分"></a>按照类型划分</h4><ul>
+<li>独占(排他)锁<ul>
+<li>这种锁一般用于数据的修改操作，保证不会同时对同一个资源进行多重更新，同时也防止了并发事务对资源的访问；</li>
+</ul>
+</li>
+<li>共享锁<ul>
+<li>共享锁是一种只读的锁，这种锁用于并发事务中读取一个资源的时候，任何事务都不可对该资源进行修改；</li>
+</ul>
+</li>
+<li>更新锁<ul>
+<li>更新锁一般在读取表中数据的时候使用更新锁，更新锁允许其它程序不加锁的条件下读，本程序可以随意修改；</li>
+</ul>
+</li>
+</ul>
+<p><br /><strong>思考：为什么读取数据的时候不用共享锁，来防止其它事务的修改？</strong></p>
+<ul>
+<li>这样的做法其实是为了防止死锁的发生，一般更新数据的时候，首先会对该数据进行读取，然后再修改，如果使用共享锁，那么读取数据之后，共享锁需要转换成排他锁；</li>
+<li>有一种场景如果两个事务同时获得了资源的共享锁，然后试图同时更新数据，那么当一个事务将锁进行转化排他锁，（共享锁到排他锁会有间隔时间，因为这两种锁不兼容），另一个事务有可能也在尝试获取排他锁，因此发生了等待，产生死锁；</li>
+<li>如果使用更新锁，由于一次只能一个事务可以获取资源上的更新锁，如果事务进行修改，更新锁会转换成排他锁，否则锁转换成贡献锁；</li>
+</ul>
+<p><strong>总结：根本原因</strong></p>
+<ul>
+<li>根本原因即在于共享锁可以被多个事务同时获取；</li>
+</ul>
+<p><a name="2z6fs"></a></p>
+<h3 id="行级锁"><a href="#行级锁" class="headerlink" title="行级锁"></a>行级锁</h3><p><a name="ecnc6"></a></p>
+<h4 id="排他锁"><a href="#排他锁" class="headerlink" title="排他锁"></a>排他锁</h4><p>阻塞其它事务的写和读</p>
+<p><a name="adVOe"></a></p>
+<h4 id="共享锁"><a href="#共享锁" class="headerlink" title="共享锁"></a>共享锁</h4><p>允许多个事务并发读；但如果需要更新数据，有可能会出现死锁；</p>
+<p><a name="Tnkq6"></a></p>
+<h4 id="间隙锁"><a href="#间隙锁" class="headerlink" title="间隙锁"></a>间隙锁</h4><p>当使用范围条件进行检索数据的时并请求共享或者排他锁时，InnoDB会给符合条件的已有数据的索引进行加锁，对于在条件范围的键值，但不存在的记录，叫做“间隙”，InnoDB也会对该部分数据加间隙锁；因此如果执行的条件范围过大，则有可能会将整个范围内的索引键值全部锁定，对性能造成影响；</p>
+<p><a name="eK0hL"></a></p>
+<h4 id="更新锁"><a href="#更新锁" class="headerlink" title="更新锁"></a>更新锁</h4><p>允许其它事务读但不可写；</p>
+<p><a name="DoXg7"></a></p>
+<h4 id="行锁的优化"><a href="#行锁的优化" class="headerlink" title="行锁的优化"></a>行锁的优化</h4><ul>
+<li>尽可能让所有的数据检索通过索引完成，避免无索引行或者索引失效导致行锁变成表锁；（详情请看扩展）</li>
+<li>避免间隙锁，合理使用检索范围；</li>
+<li>尽可能降低事务粒度，减少锁的竞争</li>
+<li>尽可能低级别的事务隔离，隔离级别越高，并发处理会降低；（事务隔离看扩展）</li>
+</ul>
+<p><a name="p2zLI"></a></p>
+<h3 id="表级锁"><a href="#表级锁" class="headerlink" title="表级锁"></a>表级锁</h3><p><a name="zOcAQ"></a></p>
+<h4 id="共享读锁：lock-table-tableName-read"><a href="#共享读锁：lock-table-tableName-read" class="headerlink" title="共享读锁：lock table tableName read;"></a>共享读锁：lock table tableName read;</h4><p>不阻塞其它进程对同一个表的操作，但会阻塞写操作。</p>
+<p><a name="3ew7J"></a></p>
+<h4 id="独占写锁：lock-table-tableName-write"><a href="#独占写锁：lock-table-tableName-write" class="headerlink" title="独占写锁：lock table tableName write;"></a>独占写锁：lock table tableName write;</h4><p>阻塞其它进程的读写操作。</p>
+<p><a name="qfAbE"></a></p>
+<h4 id="批量解锁：unlock-tables"><a href="#批量解锁：unlock-tables" class="headerlink" title="批量解锁：unlock tables;"></a>批量解锁：unlock tables;</h4><p>解锁时使用。</p>
+<p><a name="jYYTu"></a></p>
+<h4 id="什么场景下使用表锁"><a href="#什么场景下使用表锁" class="headerlink" title="什么场景下使用表锁"></a>什么场景下使用表锁</h4><ul>
+<li>当需要进行全表更新的时候，如果使用行锁，会导致效率低下；</li>
+<li>多表查询涉及到多个表的关联查询时，使用表锁，可以避免死锁；</li>
+</ul>
+<p><a name="yQ80m"></a></p>
+<h3 id="MVCC"><a href="#MVCC" class="headerlink" title="MVCC"></a>MVCC</h3><p>mvcc是行级锁的一个变种，目的是为了尽可能的避免加锁，它的原理是通过保存某一时刻的数据快照来实现的。任意时刻事务看到的是一个同样的数据视图，但是不同事务同一时刻看到的数据有可能不同；</p>
+<p><a name="RAT8U"></a></p>
+<h4 id="实现MVCC原理"><a href="#实现MVCC原理" class="headerlink" title="实现MVCC原理"></a>实现MVCC原理</h4><ul>
+<li>mvcc在每行数据的后面都隐藏了来两个列，用来存储两个版本号，分别是行版本号和行删除版本号；行版本号未该快照创建的系统版本号，行删除版本号规定了，如果删除的版本号大于当前的事务版本号，说明当前的快照是有效的，否则说明该快照已经被删除了。</li>
+<li>系统版本号仅仅是一个递增的数字，每个新事务会自动递增，事务版本号是事务开始时的系统版本号。</li>
+<li>快照保存在undo日志中，该日志通过滚指针把一个数据行的所有快照连接起来</li>
+</ul>
+<p><a name="MQf6y"></a></p>
+<h4 id="实现MVCC的过程"><a href="#实现MVCC的过程" class="headerlink" title="实现MVCC的过程"></a>实现MVCC的过程</h4><ul>
+<li>每行的数据都会存在一个版本，每次更新数据的时候都会更新该版本；</li>
+<li>当修改数据的时候，copy出当前版本随意修改，各个事务之间互不影响；</li>
+<li>保存的时候要比较版本号，如果成功的话，则覆盖原来的记录，否则放弃copy；</li>
+<li>使用MVCC读取的是快照中的数据，这样可以减少加锁带来的开销；</li>
+</ul>
+<p><a name="AWP4N"></a></p>
+<h4 id="执行语句时的步骤"><a href="#执行语句时的步骤" class="headerlink" title="执行语句时的步骤"></a>执行语句时的步骤</h4><ul>
+<li>select<ul>
+<li>InnoDB只会查找版本早于当前事务版本的数据行，对于行的删除版本要么没有被创建，要么大于当前事务的版本号；</li>
+</ul>
+</li>
+<li>Insert<ul>
+<li>插入新的数据会将当前系统版本号作为行版本号</li>
+</ul>
+</li>
+<li>delete<ul>
+<li>为删除的每一行保存当前的版本号，作为删除的标识；</li>
+</ul>
+</li>
+<li>update<ul>
+<li>将当前的系统版本号作为新的数据行快照的删除版本号，并将当前的系统版本号进行更新后的数据行快照创建版本号，即先DELETE再INSERT；<br><a name="l17o5"></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="扩展"><a href="#扩展" class="headerlink" title="扩展"></a>扩展</h3><p><a name="gQcqk"></a></p>
+<h4 id="存储引擎"><a href="#存储引擎" class="headerlink" title="存储引擎"></a>存储引擎</h4><p>MySQL的存储引擎有两种分别是InnoDB和MyISAM，InnoDB默认使用行级锁，但需要注意的是此种的行级锁是针对索引加的锁，因此如果不是操作索引，会默认使用表级锁；</p>
+<p><a name="i0RH6"></a></p>
+<h4 id="InnoDB和MyISAM的区别"><a href="#InnoDB和MyISAM的区别" class="headerlink" title="InnoDB和MyISAM的区别"></a>InnoDB和MyISAM的区别</h4><ul>
+<li>InnoDB多了行级锁，事务，mvcc，外键；</li>
+<li>MyISAM支持全文索引；</li>
+</ul>
+<p><br /><strong>select  count(*)哪个更快，为什么？</strong><br />Myisam，主要它在内部维护了一个计数器。</p>
+<p><a name="Oa2jF"></a></p>
+<h4 id="事务常见的问题"><a href="#事务常见的问题" class="headerlink" title="事务常见的问题"></a>事务常见的问题</h4><ul>
+<li><p>更新丢失</p>
+<ul>
+<li>多个事务进行更新，可能会出现更新覆盖；</li>
+</ul>
+</li>
+<li><p>脏读</p>
+<ul>
+<li>事务A读取了事务B已经修改但是未提交的数据，若事务B进行回滚，事务A的数据根本不存在‘</li>
+</ul>
+</li>
+<li><p>不可重复读</p>
+<ul>
+<li>事务A读取数据，第二次读取事务B已经修改或者删除的数据，导致两次读取数据不一致；</li>
+</ul>
+</li>
+<li><p>幻读</p>
+<ul>
+<li>事务A在相同条件下第二次查询读取到新增的数据，两次数据结果不一致；<br><a name="9yMm0"></a><h4 id="事务的隔离级别"><a href="#事务的隔离级别" class="headerlink" title="事务的隔离级别"></a>事务的隔离级别</h4></li>
+</ul>
+</li>
+<li><p>未提交读：最低级别；会发生脏读，不可重复读，幻读；</p>
+</li>
+<li><p>已提交读：语句级别；会发生不可重复读，幻读；</p>
+</li>
+<li><p>可重复读：事务级别；会发生幻读；</p>
+</li>
+<li><p>可序列化：最高级别，事务级别；不会发生任何问题；</p>
+</li>
+</ul>
+</div><div class="tags"><a href="/tags/MySQL/">MySQL</a><a href="/tags/%E9%94%81/">锁</a></div><div class="post-nav"><a class="pre" href="/2020/03/03/%E6%B1%82%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E4%B8%AD%E6%AF%8F%E4%B8%AA%E7%AA%97%E5%8F%A3%E7%9A%84%E6%9C%80%E5%A4%A7%E5%80%BC/">求滑动窗口中每个窗口的最大值</a><a class="next" href="/2020/03/01/%E9%A1%BA%E5%BA%8F%E6%89%93%E5%8D%B0%E7%9F%A9%E9%98%B5/">顺序打印矩阵</a></div><div id="lv-container" data-id="city" data-uid="MTAyMC80NTc3MC8yMjI4MQ=="><script>(function(d, s) {
+   var j, e = d.getElementsByTagName(s)[0];
+   if (typeof LivereTower === 'function') { return; }
+   j = d.createElement(s);
+   j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+   j.async = true;
+   e.parentNode.insertBefore(j, e);
+})(document, 'script');
+</script></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="https://mowuya.cn"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Go/">Go</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/RabbitMQ/">RabbitMQ</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%90%84%E7%A7%8D%E8%AF%86%E5%88%AB/">各种识别</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%9D%82%E6%96%87/">杂文</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B6%88%E6%81%AF%E6%A0%BC%E5%BC%8F/">消息格式</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80/">网络基础</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/">虚拟化</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">计算机操作系统</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/BFS/" style="font-size: 15px;">BFS</a> <a href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" style="font-size: 15px;">二叉树</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 15px;">微服务</a> <a href="/tags/Docker/" style="font-size: 15px;">Docker</a> <a href="/tags/Zabbix/" style="font-size: 15px;">Zabbix</a> <a href="/tags/%E5%8C%85%E7%9A%84%E7%AE%A1%E7%90%86/" style="font-size: 15px;">包的管理</a> <a href="/tags/golang/" style="font-size: 15px;">golang</a> <a href="/tags/test/" style="font-size: 15px;">test</a> <a href="/tags/%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84/" style="font-size: 15px;">项目结构</a> <a href="/tags/http/" style="font-size: 15px;">http</a> <a href="/tags/https/" style="font-size: 15px;">https</a> <a href="/tags/envoy/" style="font-size: 15px;">envoy</a> <a href="/tags/%E5%8F%91%E5%B8%83%E4%B8%8E%E8%AE%A2%E9%98%85/" style="font-size: 15px;">发布与订阅</a> <a href="/tags/MySQL/" style="font-size: 15px;">MySQL</a> <a href="/tags/%E9%94%81/" style="font-size: 15px;">锁</a> <a href="/tags/NATS/" style="font-size: 15px;">NATS</a> <a href="/tags/NSQ/" style="font-size: 15px;">NSQ</a> <a href="/tags/RabbitMQ/" style="font-size: 15px;">RabbitMQ</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/error/" style="font-size: 15px;">error</a> <a href="/tags/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/" style="font-size: 15px;">主从复制</a> <a href="/tags/context/" style="font-size: 15px;">context</a> <a href="/tags/%E5%8C%85%E7%BB%93%E6%9E%84/" style="font-size: 15px;">包结构</a> <a href="/tags/grpc/" style="font-size: 15px;">grpc</a> <a href="/tags/protoc/" style="font-size: 15px;">protoc</a> <a href="/tags/%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/" style="font-size: 15px;">配置文件</a> <a href="/tags/%E6%95%B0%E7%BB%84/" style="font-size: 15px;">数组</a> <a href="/tags/%E6%9D%82%E6%96%87/" style="font-size: 15px;">杂文</a> <a href="/tags/AI/" style="font-size: 15px;">AI</a> <a href="/tags/%E5%8D%8F%E7%A8%8B/" style="font-size: 15px;">协程</a> <a href="/tags/%E6%A1%B6%E6%8E%92%E5%BA%8F/" style="font-size: 15px;">桶排序</a> <a href="/tags/%E8%87%AA%E5%A2%9EID/" style="font-size: 15px;">自增ID</a> <a href="/tags/%E5%88%86%E9%A1%B5/" style="font-size: 15px;">分页</a> <a href="/tags/%E5%88%86%E6%AE%B5/" style="font-size: 15px;">分段</a> <a href="/tags/%E9%A1%B5%E9%9D%A2%E7%BD%AE%E6%8D%A2/" style="font-size: 15px;">页面置换</a> <a href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" style="font-size: 15px;">位运算</a> <a href="/tags/%E9%80%92%E5%BD%92/" style="font-size: 15px;">递归</a> <a href="/tags/Http/" style="font-size: 15px;">Http</a> <a href="/tags/%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/" style="font-size: 15px;">开发环境</a> <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8/" style="font-size: 15px;">服务器</a> <a href="/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/" style="font-size: 15px;">虚拟化</a> <a href="/tags/%E6%A0%88/" style="font-size: 15px;">栈</a> <a href="/tags/%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3/" style="font-size: 15px;">滑动窗口</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 15px;">算法</a> <a href="/tags/%E8%BF%9B%E7%A8%8B/" style="font-size: 15px;">进程</a> <a href="/tags/%E7%BA%A2%E9%BB%91%E6%A0%91/" style="font-size: 15px;">红黑树</a> <a href="/tags/%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/" style="font-size: 15px;">调度算法</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2020/03/09/%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%B0%83%E5%BA%A6/">进程的调度</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/08/%E5%88%86%E9%A1%B5%E4%B8%8E%E4%B8%8E%E5%88%86%E6%AE%B5/">分页与与分段</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/05/BFS%E7%9A%84%E9%80%92%E5%BD%92%E4%B8%8E%E9%9D%9E%E9%80%92%E5%BD%92/">BFS的递归与非递归</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/05/%E5%87%BA%E7%8E%B0%E9%A2%91%E7%8E%87%E6%9C%80%E5%A4%9A%E7%9A%84%E5%89%8DK%E4%B8%AA%E5%85%83%E7%B4%A0-%E6%A1%B6%E6%8E%92%E5%BA%8F/">出现频率最多的前K个元素-桶排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/04/Redis%E7%9A%84%E5%A4%8D%E5%88%B6%E3%80%81%E5%93%A8%E5%85%B5%E3%80%81%E5%88%86%E7%89%87/">Redis的复制、哨兵、分片</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/04/Redis%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/">Redis的使用场景</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/04/MySQL%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6%E5%8F%8A%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/">MySQL索引机制及查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/03/docker%E6%90%AD%E5%BB%BAredis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">docker搭建redis主从复制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/03/HTTP/">HTTP&&HTTPS</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/03/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96/">redis的持久化</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://lessisbetter.site/" title="Go语言充电站" target="_blank">Go语言充电站</a><ul></ul><a href="http://xargin.com/" title="Xargin(曹大)的博客" target="_blank">Xargin(曹大)的博客</a><ul></ul><a href="https://qcrao.github.io/" title="码农桃花源的博客" target="_blank">码农桃花源的博客</a><ul></ul><a href="https://book.eddycjy.com/golang/" title="煎鱼的迷之博客" target="_blank">煎鱼的迷之博客</a><ul></ul><a href="https://dave.cheney.net/" title="Go大神Dave Cheney的博客" target="_blank">Go大神Dave Cheney的博客</a><ul></ul><a href="https://github.com/ardanlabs/gotraining/blob/master/reading/README.md" title="GitHub开源Go博客" target="_blank">GitHub开源Go博客</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2020 <a href="/." rel="nofollow">陌无崖 Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css"><script type="text/javascript" color="0,0,0" opacity="0.5" zIndex="-2" count="50" src="//lib.baomitu.com/canvas-nest.js/2.0.4/canvas-nest.umd.js"></script><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content=""><title>计算机操作系统——进程和线程 | 陌无崖 Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/normalize/8.0.1/normalize.min.css"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//lib.baomitu.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//lib.baomitu.com/jquery/3.4.0/jquery.min.js"></script><link rel="icon" mask="" sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><meta name="generator" content="Hexo 4.2.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">计算机操作系统——进程和线程</h1><a id="logo" href="/.">陌无崖 Blog</a><p class="description">What Should I Do？</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/tags/"><i class="fa fa-tag"> 标签</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/study/"><i class="fa fa-book"> study</i></a><a href="https://github.com/yuwe1" target="_blank" rel="noopener"><i class="fa fa-github"> github</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">计算机操作系统——进程和线程</h1><div class="post-meta">Jan 24, 2020<span> | </span><span class="category"><a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">计算机操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span></div><div class="post-content"><h2 id="cpu"><a href="#cpu" class="headerlink" title="cpu"></a>cpu</h2><ul>
+<li>计算机的核心是cpu，承担了所有的计算任务</li>
+<li>单个cpu只能一次运行一个任务</li>
+</ul>
+<h2 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h2><h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><ul>
+<li>进程是具有一定功能的程序关于某个数据集合上的一次运行活动</li>
+</ul>
+<h3 id="为什么需要进程"><a href="#为什么需要进程" class="headerlink" title="为什么需要进程"></a>为什么需要进程</h3><p>为了提高CPU的效率，人们想把多个程序同时加载到计算机中，并发执行，这些同时存在于计算机内存的程序就称为进程，进程让每个用户自己独占CPU，因此进程是为了在CPU上实现多道编程而出现的概念</p>
+<p><strong><em>简单解释</em></strong></p>
+<ul>
+<li>一个程序加载到内存后就变成了进程</li>
+<li>进程是系统进行资源调度和分配的一个独立的单位</li>
+</ul>
+<h3 id="什么是进程"><a href="#什么是进程" class="headerlink" title="什么是进程"></a>什么是进程</h3><ul>
+<li>从物理内存上：进程是内存的一片内存空间，在任意时刻cpu只能执行一条指令，执行哪条指令由物理程序由程序计数器决定，也就是说，进程共用一个程序计数器</li>
+<li>从逻辑上：由于进程可以执行，也可以被挂起，还能继续执行，因此从这个角度看，每个进程有着自己的计数器</li>
+<li>从时间上：进程都是向前推进</li>
+</ul>
+<h3 id="进程的管理"><a href="#进程的管理" class="headerlink" title="进程的管理"></a>进程的管理</h3><p>进程在计算机上运行，需要让计算机分配合适的内存，让其有一个安身之处，由于多个进程可能同时并存，因此为了解决让多个进程共享同一个物理内存而不发生冲突，操作系统解决这个问题的手段是内存管理；此外进程也需要进行切换，因此计算机为解决这个问题，则有了进程调度</p>
+<ul>
+<li><p>进程表存放进程的一切信息</p>
+</li>
+<li><p>当一个进程产生的时候，操作系统需要为它创建记录，存储的结构为进程表</p>
+</li>
+</ul>
+<h3 id="进程的创建过程"><a href="#进程的创建过程" class="headerlink" title="进程的创建过程"></a>进程的创建过程</h3><ul>
+<li>分配进程控制块</li>
+<li>初始化机器寄存器</li>
+<li>初始化页表</li>
+<li>将程序代码从磁盘读进内存</li>
+<li>将处理器状态设置为用户态</li>
+<li>跳转到程序的起始地址</li>
+</ul>
+<h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><ul>
+<li>代表cpu只能处理的单个任务</li>
+<li>任意时刻，cpu只能运行一个进程</li>
+</ul>
+<h3 id="进程的几种状态"><a href="#进程的几种状态" class="headerlink" title="进程的几种状态"></a>进程的几种状态</h3><ul>
+<li><p>就绪状态</p>
+<p>当进程分配到除了cpu以外的所有必要的资源，只要获得处理机便可以立即执行</p>
+</li>
+<li><p>运行状态</p>
+<p>进程获得了处理机，其程序正在处理机上执行</p>
+</li>
+<li><p>阻塞状态</p>
+<p>正在执行的进程，由于等待某事件发生而无法执行时，便放弃处理机而处于阻塞状态</p>
+</li>
+</ul>
+<h3 id="状态的转换"><a href="#状态的转换" class="headerlink" title="状态的转换"></a>状态的转换</h3><ul>
+<li><p>执行到就绪</p>
+<p>一个进程运行时间太长，操作系统可以将其挂起</p>
+</li>
+<li><p>执行到阻塞</p>
+<p>运行期间执行了某种阻塞操作</p>
+</li>
+</ul>
+<ul>
+<li><p>阻塞到就绪</p>
+<p>一个阻塞的进程等待的资源到达后，就可以随时执行，进入就绪状态</p>
+</li>
+<li><p>就绪到执行</p>
+<p>就绪进程由操作系统调度到cpu上就进入执行状态</p>
+</li>
+<li><p>阻塞到执行</p>
+<p>操作系统在给阻塞分配到资源后，并不会立即执行，因此此转换不成立，操作系统选择执行的进程只会在就绪进程中选择</p>
+</li>
+<li><p>就绪到阻塞</p>
+</li>
+</ul>
+<h3 id="进程的通信方式"><a href="#进程的通信方式" class="headerlink" title="进程的通信方式"></a>进程的通信方式</h3><ul>
+<li><p>管道</p>
+<ul>
+<li><p>在某种存储空间介质上划出一片空间，赋给其中一个进程写的权力，另一个进程读的权力</p>
+</li>
+<li><p>类型</p>
+<ul>
+<li><p>普通管道</p>
+</li>
+<li><p>流管道</p>
+</li>
+<li><p>记名管道</p>
+<ul>
+<li>允许无亲缘关系的进程间的流动</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>特点</p>
+<ul>
+<li>数据单项流动</li>
+<li>且只能在具有亲缘关系的进程间流动，进程的亲缘关系通常是父子进程</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>SOCKET</p>
+</li>
+<li><p>信号</p>
+<ul>
+<li><p>为什么还需要用信号进行通信</p>
+<ul>
+<li>像迫使一方对为我们的通信立即做出回应</li>
+<li>不想建立任何连接，而是临时突然感觉需要进行通信</li>
+<li>传输的信息量微小，使用管道或者套接字不划算</li>
+</ul>
+</li>
+<li><p>信号是什么</p>
+<ul>
+<li>一个内核对象或者说是一个内核数据结构</li>
+<li>发送方将数据结构的内容填好，并指明信号的目标进程，发出特定的软件中断</li>
+<li>操作系统收到特定的中断请求，知道有信号要发送，并进行通知</li>
+<li>进程收到通知，并对信号进行处理</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>信号量</p>
+<ul>
+<li>类比火车的发行，管理铁路的是一个信号量，任何一列火车必须等待表明铁路可以行驶的信号后才能进入轨道</li>
+<li>在计算机中，信号量的本质为一个整数0或1</li>
+<li>信号量不仅仅是一种通信机制，更是一种同步机制</li>
+</ul>
+</li>
+<li><p>共享内存</p>
+<p>信息交换量最大</p>
+<ul>
+<li><p>用于进程之间需要共享大量数据</p>
+</li>
+<li><p>步骤</p>
+<ul>
+<li>进程首先需要创建一片内存空间专门作为通信用</li>
+<li>其他进程则将该片内存映射到自己的虚拟地址空间</li>
+</ul>
+</li>
+<li><p>两端都可进行读写相比较于管道</p>
+</li>
+<li><p>缺点</p>
+<ul>
+<li>管理复杂</li>
+<li>安全性低</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>消息队列</p>
+<ul>
+<li><p>和管道的不同</p>
+<ul>
+<li>无需固定的读写</li>
+<li>可以支持多个进程</li>
+<li>多个进程可以读写消息队列</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="进程的缺陷"><a href="#进程的缺陷" class="headerlink" title="进程的缺陷"></a>进程的缺陷</h3><ul>
+<li>进程只能在一个时间做一件事情</li>
+<li>进程在执行的过程中，如果发生阻塞，例如等待输入，整个进程就会被挂起，无法继续执行，因此在进程里面有部分工作，不需要使用用户输入数据，也无法推进，因此为了解决这个问题，出现了线程。</li>
+</ul>
+<h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><h3 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h3><ul>
+<li>线程是进程的实体，是cpu调度和分派的基本单位</li>
+<li>它是比进程更小的能独立运行的基本单位</li>
+<li>一个进程至少有一个线程</li>
+<li>多线程的情况先，增加cpu，可以提高进程的执行效率</li>
+</ul>
+<h3 id="特点-1"><a href="#特点-1" class="headerlink" title="特点"></a>特点</h3><ul>
+<li>一个进程包含多个线程</li>
+<li>一个进程的内存空间是共享的，每个线程都可以使用这些共享内存</li>
+</ul>
+<h3 id="线程管理"><a href="#线程管理" class="headerlink" title="线程管理"></a>线程管理</h3><ul>
+<li><p>线程控制表</p>
+</li>
+<li><p>和进程共享的部分</p>
+<ul>
+<li>地址空间</li>
+<li>全局变量</li>
+<li>文件</li>
+<li>子进程</li>
+<li>定时器</li>
+<li>信号</li>
+<li>占用CPU时间也可以共享</li>
+</ul>
+</li>
+<li><p>和进程不可共享的部分</p>
+<ul>
+<li>寄存器</li>
+<li>程序计数器</li>
+<li>栈</li>
+</ul>
+</li>
+</ul>
+<h3 id="线程的调度"><a href="#线程的调度" class="headerlink" title="线程的调度"></a>线程的调度</h3><ul>
+<li><p>由进程负责，进程中有一个执行序列</p>
+<ul>
+<li>用户态</li>
+</ul>
+</li>
+<li><p>由操作系统负责</p>
+<ul>
+<li>内核态</li>
+</ul>
+</li>
+</ul>
+<h3 id="线程中用户态到内核态的切换"><a href="#线程中用户态到内核态的切换" class="headerlink" title="线程中用户态到内核态的切换"></a>线程中用户态到内核态的切换</h3><ul>
+<li>设置处理器内核态</li>
+<li>保存当前的寄存器（栈指针，程序计数器、通用寄存器）</li>
+<li>将栈指针设置指向内核栈地址</li>
+<li>将程序计数器设置为一个视线约定的地址上，该地址存放的是系统调用处理程序的起始地址</li>
+</ul>
+<h3 id="线程同步"><a href="#线程同步" class="headerlink" title="线程同步"></a>线程同步</h3><ul>
+<li><p>方式</p>
+<ul>
+<li><p>临界区</p>
+<ul>
+<li>当多个线程访问问一个独占性共享资源呢的时候，可以使用临界区对象。</li>
+<li>拥有临界区对象的线程可以访问被保护起来的资源，其他线程如果要访问，必须等待获取临界区对象</li>
+</ul>
+</li>
+<li><p>事件</p>
+<ul>
+<li><p>一个线程结束后，主动唤醒另外一个线程执行任务</p>
+</li>
+<li><p>事件的两种状态</p>
+<ul>
+<li>有信号</li>
+<li>无信号</li>
+</ul>
+</li>
+<li><p>事件的两种类型</p>
+<ul>
+<li><p>人工事件</p>
+<ul>
+<li>获得信号后，释放可利用的线程，直到调用成员函数Reset()才将其设置为无信号状态，这一阶段为手动执行</li>
+</ul>
+</li>
+<li><p>自动事件</p>
+<ul>
+<li>在被至少一个线程释放后自动返回到无信号的状态，这一阶段为自动执行</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>互斥量</p>
+<ul>
+<li>只有拥有互斥对象的线程才能有访问公共资源的权限，互斥对象只有一个</li>
+<li>线程在使用每一个内存空间的时候，其他的线程如果想要使用，必须等到该线程结束，这里使用了互斥锁</li>
+</ul>
+</li>
+<li><p>信号量</p>
+<ul>
+<li><p>即允许多个线程同时访问同一资源</p>
+</li>
+<li><p>easy explain</p>
+<ul>
+<li>有些内存只能提供给固定数目的线程使用</li>
+<li>每个线程在使用的时候，需要取钥匙，进去，出来时在挂回钥匙</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>目的</p>
+<ul>
+<li>防止线程共同运行时，对结果产生不确定性</li>
+<li>不论线程的执行如何穿插，其运行结果都是正确的</li>
+</ul>
+</li>
+<li><p>两个或多个线程相执行同一段代码或者访问统一资源的现象称为竞争，这个可能造成竞争的共享代码段或者资源称为临界区</p>
+</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>多进程形式，允许多个任务同时运行</p>
+</li>
+<li><p>多线程形式，允许单个任务分成不同的部分运行</p>
+</li>
+<li><p>协调机制，防止进程和线程之间的冲突，另一方面允许进程之间和线程之间共享资源</p>
+</li>
+<li><p>线程可以独享</p>
+</li>
+</ul>
+</div><div class="tags"><a href="/tags/%E8%BF%9B%E7%A8%8B/">进程</a></div><div class="post-nav"><a class="pre" href="/2020/01/28/%E4%BA%8C%E5%8F%89%E6%A0%91%E9%95%9C%E5%83%8F/">二叉树镜像</a><a class="next" href="/2020/01/16/%E4%BA%8C%E7%BB%B4%E6%95%B0%E7%BB%84%E7%9A%84%E6%9F%A5%E6%89%BE/">二维数组的查找</a></div><div id="lv-container" data-id="city" data-uid="MTAyMC80NTc3MC8yMjI4MQ=="><script>(function(d, s) {
+   var j, e = d.getElementsByTagName(s)[0];
+   if (typeof LivereTower === 'function') { return; }
+   j = d.createElement(s);
+   j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+   j.async = true;
+   e.parentNode.insertBefore(j, e);
+})(document, 'script');
+</script></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="https://mowuya.cn"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Go/">Go</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/RabbitMQ/">RabbitMQ</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%90%84%E7%A7%8D%E8%AF%86%E5%88%AB/">各种识别</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%9D%82%E6%96%87/">杂文</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B6%88%E6%81%AF%E6%A0%BC%E5%BC%8F/">消息格式</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80/">网络基础</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/">虚拟化</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">计算机操作系统</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/BFS/" style="font-size: 15px;">BFS</a> <a href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" style="font-size: 15px;">二叉树</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 15px;">微服务</a> <a href="/tags/Docker/" style="font-size: 15px;">Docker</a> <a href="/tags/Zabbix/" style="font-size: 15px;">Zabbix</a> <a href="/tags/%E5%8C%85%E7%9A%84%E7%AE%A1%E7%90%86/" style="font-size: 15px;">包的管理</a> <a href="/tags/golang/" style="font-size: 15px;">golang</a> <a href="/tags/test/" style="font-size: 15px;">test</a> <a href="/tags/%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84/" style="font-size: 15px;">项目结构</a> <a href="/tags/http/" style="font-size: 15px;">http</a> <a href="/tags/https/" style="font-size: 15px;">https</a> <a href="/tags/envoy/" style="font-size: 15px;">envoy</a> <a href="/tags/%E5%8F%91%E5%B8%83%E4%B8%8E%E8%AE%A2%E9%98%85/" style="font-size: 15px;">发布与订阅</a> <a href="/tags/MySQL/" style="font-size: 15px;">MySQL</a> <a href="/tags/%E9%94%81/" style="font-size: 15px;">锁</a> <a href="/tags/NATS/" style="font-size: 15px;">NATS</a> <a href="/tags/NSQ/" style="font-size: 15px;">NSQ</a> <a href="/tags/RabbitMQ/" style="font-size: 15px;">RabbitMQ</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/error/" style="font-size: 15px;">error</a> <a href="/tags/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/" style="font-size: 15px;">主从复制</a> <a href="/tags/context/" style="font-size: 15px;">context</a> <a href="/tags/%E5%8C%85%E7%BB%93%E6%9E%84/" style="font-size: 15px;">包结构</a> <a href="/tags/grpc/" style="font-size: 15px;">grpc</a> <a href="/tags/protoc/" style="font-size: 15px;">protoc</a> <a href="/tags/%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/" style="font-size: 15px;">配置文件</a> <a href="/tags/%E6%95%B0%E7%BB%84/" style="font-size: 15px;">数组</a> <a href="/tags/%E6%9D%82%E6%96%87/" style="font-size: 15px;">杂文</a> <a href="/tags/AI/" style="font-size: 15px;">AI</a> <a href="/tags/%E5%8D%8F%E7%A8%8B/" style="font-size: 15px;">协程</a> <a href="/tags/%E6%A1%B6%E6%8E%92%E5%BA%8F/" style="font-size: 15px;">桶排序</a> <a href="/tags/%E8%87%AA%E5%A2%9EID/" style="font-size: 15px;">自增ID</a> <a href="/tags/%E5%88%86%E9%A1%B5/" style="font-size: 15px;">分页</a> <a href="/tags/%E5%88%86%E6%AE%B5/" style="font-size: 15px;">分段</a> <a href="/tags/%E9%A1%B5%E9%9D%A2%E7%BD%AE%E6%8D%A2/" style="font-size: 15px;">页面置换</a> <a href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" style="font-size: 15px;">位运算</a> <a href="/tags/%E9%80%92%E5%BD%92/" style="font-size: 15px;">递归</a> <a href="/tags/Http/" style="font-size: 15px;">Http</a> <a href="/tags/%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/" style="font-size: 15px;">开发环境</a> <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8/" style="font-size: 15px;">服务器</a> <a href="/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/" style="font-size: 15px;">虚拟化</a> <a href="/tags/%E6%A0%88/" style="font-size: 15px;">栈</a> <a href="/tags/%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3/" style="font-size: 15px;">滑动窗口</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 15px;">算法</a> <a href="/tags/%E8%BF%9B%E7%A8%8B/" style="font-size: 15px;">进程</a> <a href="/tags/%E7%BA%A2%E9%BB%91%E6%A0%91/" style="font-size: 15px;">红黑树</a> <a href="/tags/%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/" style="font-size: 15px;">调度算法</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2020/03/09/%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%B0%83%E5%BA%A6/">进程的调度</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/08/%E5%88%86%E9%A1%B5%E4%B8%8E%E4%B8%8E%E5%88%86%E6%AE%B5/">分页与与分段</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/05/BFS%E7%9A%84%E9%80%92%E5%BD%92%E4%B8%8E%E9%9D%9E%E9%80%92%E5%BD%92/">BFS的递归与非递归</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/05/%E5%87%BA%E7%8E%B0%E9%A2%91%E7%8E%87%E6%9C%80%E5%A4%9A%E7%9A%84%E5%89%8DK%E4%B8%AA%E5%85%83%E7%B4%A0-%E6%A1%B6%E6%8E%92%E5%BA%8F/">出现频率最多的前K个元素-桶排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/04/Redis%E7%9A%84%E5%A4%8D%E5%88%B6%E3%80%81%E5%93%A8%E5%85%B5%E3%80%81%E5%88%86%E7%89%87/">Redis的复制、哨兵、分片</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/04/Redis%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/">Redis的使用场景</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/04/MySQL%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6%E5%8F%8A%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/">MySQL索引机制及查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/03/docker%E6%90%AD%E5%BB%BAredis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">docker搭建redis主从复制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/03/HTTP/">HTTP&&HTTPS</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/03/03/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96/">redis的持久化</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://lessisbetter.site/" title="Go语言充电站" target="_blank">Go语言充电站</a><ul></ul><a href="http://xargin.com/" title="Xargin(曹大)的博客" target="_blank">Xargin(曹大)的博客</a><ul></ul><a href="https://qcrao.github.io/" title="码农桃花源的博客" target="_blank">码农桃花源的博客</a><ul></ul><a href="https://book.eddycjy.com/golang/" title="煎鱼的迷之博客" target="_blank">煎鱼的迷之博客</a><ul></ul><a href="https://dave.cheney.net/" title="Go大神Dave Cheney的博客" target="_blank">Go大神Dave Cheney的博客</a><ul></ul><a href="https://github.com/ardanlabs/gotraining/blob/master/reading/README.md" title="GitHub开源Go博客" target="_blank">GitHub开源Go博客</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2020 <a href="/." rel="nofollow">陌无崖 Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css"><script type="text/javascript" color="0,0,0" opacity="0.5" zIndex="-2" count="50" src="//lib.baomitu.com/canvas-nest.js/2.0.4/canvas-nest.umd.js"></script><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
